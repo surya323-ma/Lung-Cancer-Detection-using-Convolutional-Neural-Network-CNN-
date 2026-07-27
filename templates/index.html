@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fortune Hospital · Pulmonary AI Diagnostics</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+<div class="app">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">FH</div>
+      <div class="brand-text">
+        <span class="brand-name">Fortune Hospital</span>
+        <span class="brand-sub">Pulmonary AI Diagnostics</span>
+      </div>
+    </div>
+
+    <nav class="nav">
+      <button class="nav-item active" data-view="overview">
+        <span class="nav-icon">&#9673;</span> Overview
+      </button>
+      <button class="nav-item" data-view="analysis">
+        <span class="nav-icon">&#9737;</span> Scan Analysis
+      </button>
+      <button class="nav-item" data-view="records">
+        <span class="nav-icon">&#9776;</span> Patient Records
+      </button>
+      <button class="nav-item" data-view="insights">
+        <span class="nav-icon">&#9670;</span> Model Insights
+      </button>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="model-pill" id="model-pill">
+        <span class="dot"></span> <span id="model-pill-text">Checking model…</span>
+      </div>
+      <p class="disclaimer-mini">Educational demo · not for clinical use</p>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="main">
+
+    <header class="topbar">
+      <div>
+        <h1 id="view-title">Department Overview</h1>
+        <p id="view-subtitle">Pulmonary histopathology screening, at a glance</p>
+      </div>
+      <div class="topbar-right">
+        <div class="clock" id="clock"></div>
+        <div class="avatar">MK</div>
+      </div>
+    </header>
+
+    <!-- OVERVIEW VIEW -->
+    <section class="view" id="view-overview">
+      <div class="stat-grid">
+        <div class="stat-card">
+          <span class="stat-label">Total Scans</span>
+          <span class="stat-value" id="stat-total">0</span>
+          <span class="stat-foot">All time, this instance</span>
+        </div>
+        <div class="stat-card accent-teal">
+          <span class="stat-label">Benign Findings</span>
+          <span class="stat-value" id="stat-benign">0</span>
+          <span class="stat-foot">Lung benign tissue</span>
+        </div>
+        <div class="stat-card accent-coral">
+          <span class="stat-label">High-Risk Flags</span>
+          <span class="stat-value" id="stat-highrisk">0</span>
+          <span class="stat-foot">Malignant probability ≥ 60%</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">Avg. Model Confidence</span>
+          <span class="stat-value" id="stat-avgconf">0%</span>
+          <span class="stat-foot">Across all scans</span>
+        </div>
+      </div>
+
+      <div class="panel-row">
+        <div class="panel chart-panel">
+          <div class="panel-head">
+            <h3>Scans Processed</h3>
+            <span class="panel-tag">Last 14 days</span>
+          </div>
+          <canvas id="chart-trend" height="140"></canvas>
+        </div>
+        <div class="panel chart-panel">
+          <div class="panel-head">
+            <h3>Diagnostic Distribution</h3>
+            <span class="panel-tag">All scans</span>
+          </div>
+          <canvas id="chart-distribution" height="140"></canvas>
+        </div>
+      </div>
+
+      <div class="panel table-panel">
+        <div class="panel-head">
+          <h3>Recent Scans</h3>
+          <span class="panel-tag">Latest 6</span>
+        </div>
+        <table class="scan-table" id="overview-table">
+          <thead>
+            <tr><th>Scan ID</th><th>Patient Ref.</th><th>Result</th><th>Confidence</th><th>Time</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ANALYSIS VIEW -->
+    <section class="view hidden" id="view-analysis">
+      <div class="analysis-grid">
+
+        <div class="panel upload-panel">
+          <div class="panel-head">
+            <h3>New Histopathology Scan</h3>
+          </div>
+          <label class="field-label">Patient reference (optional)</label>
+          <input type="text" id="patient-ref" class="text-input" placeholder="e.g. AKTU-2026-0417">
+
+          <div class="dropzone" id="dropzone">
+            <input type="file" id="file-input" accept="image/*" hidden>
+            <div id="dropzone-empty">
+              <div class="dropzone-icon">&#8593;</div>
+              <p><strong>Drag & drop</strong> a lung tissue image, or click to browse</p>
+              <p class="dropzone-hint">PNG, JPG, BMP, TIFF · up to 12MB</p>
+            </div>
+            <img id="preview-img" class="hidden" alt="Scan preview">
+          </div>
+
+          <button class="btn-primary" id="btn-analyze" disabled>Run AI Analysis</button>
+          <p class="upload-status" id="upload-status"></p>
+        </div>
+
+        <div class="panel result-panel">
+          <div class="panel-head">
+            <h3>Diagnostic Result</h3>
+            <span class="panel-tag" id="result-mode-tag">—</span>
+          </div>
+
+          <div id="result-empty" class="result-empty">
+            <p>Run a scan to see AI-assisted diagnostic output here.</p>
+          </div>
+
+          <div id="result-content" class="hidden">
+            <div class="ring-wrap">
+              <div class="confidence-ring" id="confidence-ring">
+                <div class="ring-inner">
+                  <span class="ring-value" id="ring-value">0%</span>
+                  <span class="ring-label">malignant probability</span>
+                </div>
+              </div>
+              <div class="ring-meta">
+                <span class="predicted-label" id="predicted-label">—</span>
+                <span class="predicted-conf" id="predicted-conf">—</span>
+              </div>
+            </div>
+
+            <div class="prob-bars" id="prob-bars"></div>
+
+            <div class="disclaimer-box">
+              <strong>Educational demo only.</strong>
+              <span id="mode-explainer">This result is not a validated clinical diagnosis. Always confirm findings with a licensed pathologist.</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- RECORDS VIEW -->
+    <section class="view hidden" id="view-records">
+      <div class="panel table-panel full">
+        <div class="panel-head">
+          <h3>Patient Scan Records</h3>
+          <span class="panel-tag" id="records-count">0 records</span>
+        </div>
+        <table class="scan-table" id="records-table">
+          <thead>
+            <tr><th>Scan ID</th><th>Patient Ref.</th><th>Result</th><th>Malignant Prob.</th><th>Confidence</th><th>Timestamp (UTC)</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- INSIGHTS VIEW -->
+    <section class="view hidden" id="view-insights">
+      <div class="panel-row">
+        <div class="panel">
+          <div class="panel-head"><h3>Model Architecture</h3></div>
+          <ul class="arch-list">
+            <li><span>Input</span><span>224 × 224 × 3</span></li>
+            <li><span>Conv blocks</span><span>4 × (Conv2D → BatchNorm → MaxPool)</span></li>
+            <li><span>Filters</span><span>32 → 64 → 128 → 256</span></li>
+            <li><span>Head</span><span>GAP → Dense(256) → Dropout → Dense(64) → Dropout</span></li>
+            <li><span>Output</span><span>Softmax, 3 classes</span></li>
+            <li><span>Classes</span><span>benign · adenocarcinoma · squamous cell carcinoma</span></li>
+          </ul>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><h3>Current Serving Mode</h3></div>
+          <p class="insight-text" id="insight-mode-text">Checking…</p>
+          <p class="insight-text-small">To serve real predictions, train <code>model/cnn_model.py</code> on the LC25000 lung histopathology dataset and place the resulting <code>lung_cnn.h5</code> in <code>/model</code>. Until then, the API clearly marks every result as <code>demo_heuristic</code>.</p>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.3/chart.umd.min.js"></script>
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+</body>
+</html>
