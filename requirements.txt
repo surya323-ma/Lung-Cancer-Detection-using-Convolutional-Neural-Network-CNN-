@@ -1,0 +1,8 @@
+Flask==3.0.3
+gunicorn==22.0.0
+Pillow==10.4.0
+numpy==1.26.4
+Werkzeug==3.0.3
+
+# Uncomment to train / run real CNN inference (heavy, not required for demo mode)
+# tensorflow-cpu==2.16.1
